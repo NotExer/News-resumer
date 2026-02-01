@@ -59,5 +59,3 @@ npm run dev
 ## 🤖 Uso de la IA
 Asegúrate de tener la aplicación **Ollama** abierta en segundo plano. Cuando hagas clic en el botón "Resumir con IA", la aplicación se conectará automáticamente a tu modelo local instalado para procesar la noticia.
 
----
-Hecho con ❤️ para amantes de la información.
