@@ -8,7 +8,7 @@ Una aplicación web minimalista inspirada en la estética de Apple que agrupa no
 - **Resúmenes con IA Local**: Utiliza **Ollama** para generar resúmenes profesionales sin costo de API y con total privacidad.
 - **Filtros Multi-idioma**: Visualiza noticias en Español, Inglés y Portugués con un solo clic.
 - **Rendimiento Optimizado**: Sistema de caché persistente para cargas instantáneas y soporte para hasta 40 noticias por categoría.
-- **Diseño Premium**: Interfaz limpia, responsiva y con animaciones sutiles siguiendo el diseño de Apple.
+- **Diseño Premium**: Interfaz limpia, responsiva y con animaciones sutiles.
 
 ## 🛠️ Tecnologías
 
