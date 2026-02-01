@@ -34,7 +34,7 @@ Una aplicación web minimalista inspirada en la estética de Apple que agrupa no
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/tu-usuario/news-resumer.git
+git clone https://github.com/NotExer/news-resumer.git
 cd news-resumer
 ```
 
