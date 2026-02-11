@@ -37,9 +37,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
-    const systemPrompt = 'Eres un periodista experto y conciso. Tu tarea es generar resúmenes profesionales en español. Nunca pidas más información. Nunca saludes. Ve directo al grano.';
+    const systemPrompt = 'Eres un periodista experto y conciso. Tu tarea es generar resúmenes profesionales en español. Nunca pidas más información. Nunca saludes. Ve directo al grano. No uses emojis.';
 
     const hasFullContent = description && description.length > 200;
     let userPrompt: string;
