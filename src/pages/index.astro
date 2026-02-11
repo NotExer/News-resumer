@@ -1,0 +1,383 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import NewsCard from "../components/NewsCard.astro";
+
+// In a real prod app, we'd fetch during build or on demand.
+// For this demo, we'll fetch client-side for "recent" news.
+---
+
+<BaseLayout title="News Resumer - Noticias Recientes">
+    <header class="mb-12">
+        <h1 class="text-5xl font-bold tracking-tight mb-4">Lo último.</h1>
+        <p class="text-xl text-black/40 font-medium">
+            Noticias de Google, resumidas con precisión por IA.
+        </p>
+    </header>
+
+    <div class="flex flex-wrap justify-between items-center gap-6 mb-8">
+        <div class="flex gap-3 overflow-x-auto no-scrollbar">
+            {
+                [
+                    "Todo",
+                    "Tecnología",
+                    "Ciencia",
+                    "Negocios",
+                    "Salud",
+                    "Entretenimiento",
+                    "Deportes",
+                ].map((cat) => (
+                    <button class="category-filter whitespace-nowrap px-5 py-2 rounded-full bg-black/5 text-black/60 text-sm font-medium hover:bg-black/10 transition-all border border-transparent">
+                        {cat}
+                    </button>
+                ))
+            }
+        </div>
+
+        <div
+            class="flex gap-2 bg-black/5 p-1 rounded-2xl border border-black/5"
+        >
+            {
+                [
+                    { label: "🇪🇸 ES", lang: "es", country: "ES" },
+                    { label: "🇺🇸 EN", lang: "en", country: "US" },
+                    { label: "🇧🇷 PT", lang: "pt", country: "BR" },
+                ].map((l) => (
+                    <button
+                        data-lang={l.lang}
+                        data-country={l.country}
+                        class="lang-filter px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:bg-white"
+                    >
+                        {l.label}
+                    </button>
+                ))
+            }
+        </div>
+    </div>
+
+    <div
+        id="news-grid"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-0 translate-y-4 transition-all duration-700"
+    >
+        <!-- News items will be injected here -->
+        <div class="col-span-full py-20 text-center opacity-40">
+            <div
+                class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-black rounded-full"
+                role="status"
+                aria-label="loading"
+            >
+            </div>
+            <p class="mt-4 font-medium">Buscando noticias frescas...</p>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div
+        id="summary-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center p-6 bg-black/20 backdrop-blur-sm"
+    >
+        <div
+            class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300"
+        >
+            <div class="p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wider text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-full mb-2 inline-block"
+                            >Resumen IA</span
+                        >
+                        <h2
+                            id="modal-title"
+                            class="text-2xl font-bold leading-tight"
+                        >
+                        </h2>
+                    </div>
+                    <button
+                        id="close-modal"
+                        class="p-2 rounded-full hover:bg-black/5 transition-all"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-x"
+                            ><path d="M18 6 6 18"></path><path d="m6 6 12 12"
+                            ></path></svg
+                        >
+                    </button>
+                </div>
+                <div
+                    id="modal-content"
+                    class="text-lg leading-relaxed text-black/80 prose prose-slate"
+                >
+                    <!-- Summary text -->
+                </div>
+            </div>
+            <div class="bg-[#f5f5f7] p-6 flex justify-end">
+                <button
+                    id="close-modal-btn"
+                    class="bg-black text-white text-sm font-semibold px-8 py-3 rounded-2xl hover:bg-black/80 transition-all shadow-lg"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "";
+        const grid = document.getElementById("news-grid");
+        const modal = document.getElementById("summary-modal");
+        const modalTitle = document.getElementById("modal-title");
+        const modalContent = document.getElementById("modal-content");
+
+        let currentCategory = "Todo";
+        let currentLang = "es";
+        let currentCountry = "ES";
+        let isSummarizing = false;
+
+        async function fetchNews() {
+            if (!grid) return;
+
+            // Show loading state
+            grid.classList.remove("opacity-100");
+            grid.classList.add("opacity-40");
+
+            try {
+                let url = `${API_BASE}/api/news?lang=${currentLang}&country=${currentCountry}`;
+                if (currentCategory && currentCategory !== "Todo") {
+                    url += `&category=${currentCategory}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                renderNews(data);
+            } catch (err) {
+                console.error("Error fetching news:", err);
+                grid.innerHTML =
+                    '<p class="col-span-full text-center py-20 opacity-40">Error al cargar noticias. ¿Está encendido el servidor backend?</p>';
+            } finally {
+                // Ensure grid is visible and remove the initial opacity-0 if present
+                grid.classList.remove("opacity-0", "opacity-40");
+                grid.classList.add("opacity-100", "translate-y-0");
+            }
+        }
+
+        function renderNews(news) {
+            if (!grid) return;
+            if (!news || news.length === 0) {
+                grid.innerHTML =
+                    '<p class="col-span-full text-center py-20 opacity-40">No se encontraron noticias.</p>';
+                return;
+            }
+
+            grid.innerHTML = news
+                .map(
+                    (item) => `
+				<div class="bg-white rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-black/5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all duration-300 group flex flex-col h-full">
+					<div class="flex-1">
+						<div class="flex items-center gap-2 mb-3">
+							<span class="text-[10px] font-bold uppercase tracking-wider text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-full">${item.source || "Noticia"}</span>
+							<span class="text-[10px] text-black/40 font-medium">${item.published_date ? new Date(item.published_date).toLocaleDateString() : "Reciente"}</span>
+						</div>
+						<h3 class="text-xl font-semibold leading-tight mb-3 group-hover:text-apple-blue transition-colors">
+							<a href="${item.url}" target="_blank" rel="noopener noreferrer">${item.title}</a>
+						</h3>
+						<p class="text-[15px] leading-relaxed text-black/60 line-clamp-3 mb-4">
+							${item.description || "Sin descripción disponible."}
+						</p>
+					</div>
+					
+					<div class="flex items-center gap-3 mt-4 pt-4 border-t border-black/5">
+						<button 
+							data-url="${item.url}"
+							data-title="${item.title.replace(/"/g, "&quot;")}"
+							data-description="${(item.description || "").replace(/"/g, "&quot;")}"
+							class="summarize-btn flex-1 bg-black text-white text-sm font-medium py-2 px-4 rounded-xl hover:bg-black/80 transition-all flex items-center justify-center gap-2"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.937A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063A2 2 0 0 0 14.063 15.5L12.5 21.635a.5.5 0 0 1-.962 0L9.937 15.5Z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+							Resumir con IA
+						</button>
+						<a 
+							href="${item.url}" 
+							target="_blank" 
+							class="p-2 rounded-xl border border-black/10 hover:bg-black/5 transition-all text-black/40 hover:text-black/80"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+						</a>
+					</div>
+				</div>
+			`,
+                )
+                .join("");
+
+            // Add event listeners back to buttons
+            document.querySelectorAll(".summarize-btn").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    if (isSummarizing) return;
+
+                    const url = btn.getAttribute("data-url");
+                    const title = btn.getAttribute("data-title");
+                    const description = btn.getAttribute("data-description");
+                    summarize(
+                        url,
+                        title,
+                        description,
+                        btn as HTMLButtonElement,
+                    );
+                });
+            });
+        }
+
+        async function summarize(url, title, description, btn) {
+            if (isSummarizing) return;
+
+            isSummarizing = true;
+            const originalText = btn.innerHTML;
+
+            // Disable all buttons and show specific state for the active one
+            document.querySelectorAll(".summarize-btn").forEach((b) => {
+                const bEl = b as HTMLButtonElement;
+                bEl.disabled = true;
+                bEl.classList.add("opacity-50", "cursor-not-allowed");
+            });
+
+            btn.classList.remove("opacity-50");
+            btn.classList.add("ring-2", "ring-apple-blue/50");
+            btn.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Resumiendo...</span>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/summarize`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url, title, description }),
+                });
+                const data = await response.json();
+
+                if (modalTitle) modalTitle.innerText = title;
+                if (modalContent)
+                    modalContent.innerHTML = data.summary.replace(
+                        /\n/g,
+                        "<br>",
+                    );
+                if (modal) {
+                    modal.classList.remove("hidden");
+                    modal.classList.add("flex");
+                }
+            } catch (err) {
+                console.error("Error summarizing:", err);
+                alert(
+                    "No se pudo resumir la noticia. Verifica el servidor y la API Key.",
+                );
+            } finally {
+                isSummarizing = false;
+                document.querySelectorAll(".summarize-btn").forEach((b) => {
+                    const bEl = b as HTMLButtonElement;
+                    bEl.disabled = false;
+                    bEl.classList.remove(
+                        "opacity-50",
+                        "cursor-not-allowed",
+                        "ring-2",
+                        "ring-apple-blue/50",
+                    );
+                });
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Initial fetch
+        fetchNews();
+
+        // Highlight active lang
+        function updateLangUI() {
+            document.querySelectorAll(".lang-filter").forEach((btn) => {
+                const isSelected =
+                    btn.getAttribute("data-lang") === currentLang;
+                if (isSelected) {
+                    btn.classList.add("bg-white", "shadow-sm", "text-black");
+                    btn.classList.remove("text-black/40");
+                } else {
+                    btn.classList.remove("bg-white", "shadow-sm", "text-black");
+                    btn.classList.add("text-black/40");
+                }
+            });
+        }
+        updateLangUI();
+
+        // Category filter listeners
+        document.querySelectorAll(".category-filter").forEach((btn) => {
+            const btnEl = btn as HTMLButtonElement;
+            const label = btnEl.innerText.trim();
+
+            // Initial active state for "Todo"
+            if (label === "Todo") {
+                btnEl.classList.add("bg-black", "text-white");
+                btnEl.classList.remove("bg-black/5", "text-black/60");
+            }
+
+            btnEl.addEventListener("click", () => {
+                currentCategory = label;
+                fetchNews();
+
+                // Update styles for all category buttons
+                document.querySelectorAll(".category-filter").forEach((b) => {
+                    const bOther = b as HTMLButtonElement;
+                    bOther.classList.remove("bg-black", "text-white");
+                    bOther.classList.add("bg-black/5", "text-black/60");
+                });
+
+                // Set active style for clicked button
+                btnEl.classList.add("bg-black", "text-white");
+                btnEl.classList.remove("bg-black/5", "text-black/60");
+            });
+        });
+
+        // Language filter listeners
+        document.querySelectorAll(".lang-filter").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                currentLang = btn.getAttribute("data-lang") || "es";
+                currentCountry = btn.getAttribute("data-country") || "ES";
+                updateLangUI();
+                fetchNews();
+            });
+        });
+
+        // Modal close logic
+        [
+            document.getElementById("close-modal"),
+            document.getElementById("close-modal-btn"),
+        ].forEach((btn) => {
+            if (!btn) return;
+            btn.addEventListener("click", () => {
+                if (modal) {
+                    modal.classList.add("hidden");
+                    modal.classList.remove("flex");
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</BaseLayout>

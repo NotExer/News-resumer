@@ -1,0 +1,7 @@
+node_modules/
+.vercel/
+.astro/
+dist/
+.env
+frontend/
+backend/
