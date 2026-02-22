@@ -2,6 +2,11 @@
 
 Una aplicación web minimalista inspirada en la estética de Apple que agrupa noticias globales de Google News y ofrece resúmenes inteligentes utilizando IA (Gemini).
 
+
+## 📺 Preview
+
+**🌐 Visita el sitio:**  [https://news-resumer.vercel.app](https://news-resumer.vercel.app)
+
 ## 🚀 Características
 
 - **Agregador de Noticias**: Obtiene las últimas noticias organizadas por categorías (Tecnología, Ciencia, Negocios, Salud, etc.).
@@ -32,33 +37,6 @@ npm install
 npm run dev
 ```
 La aplicación estará en `http://localhost:4321`.
-
-## 🚀 Deploy en Vercel (Gratis)
-
-### 1. Sube el repo a GitHub
-```bash
-git add .
-git commit -m "Ready for Vercel"
-git push
-```
-
-### 2. Importa en Vercel
-1. Ve a [vercel.com/new](https://vercel.com/new)
-2. Importa tu repositorio de GitHub
-3. Configura:
-   - **Root Directory**: `frontend`
-   - **Framework Preset**: Astro
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `.vercel/output`
-
-### 3. Variables de Entorno
-En **Settings → Environment Variables** añade:
-| Variable | Valor |
-|---|---|
-| `GEMINI_API_KEY` | Tu API key de Google AI Studio |
-
-### 4. ¡Deploy!
-Haz clic en **Deploy** y en ~1 minuto tendrás tu app en producción. 🎉
 
 ## 🤖 Uso de la IA
 Cuando hagas clic en "Resumir con IA", la app se conecta automáticamente a Google Gemini para procesar la noticia. El tier gratuito incluye suficientes solicitudes para uso personal.
