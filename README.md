@@ -3,7 +3,7 @@
 Una aplicación web minimalista inspirada en la estética de Apple que agrupa noticias globales de Google News y ofrece resúmenes inteligentes utilizando IA (Gemini).
 
 
-## 📺 Preview
+## Preview
 
 **Visita el sitio:**  [https://news-resumer.vercel.app](https://news-resumer.vercel.app)
 
