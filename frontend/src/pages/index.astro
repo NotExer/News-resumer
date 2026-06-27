@@ -73,10 +73,11 @@ import NewsCard from "../components/NewsCard.astro";
     <!-- Summary Modal -->
     <div
         id="summary-modal"
-        class="fixed inset-0 z-[100] hidden items-center justify-center p-6 bg-black/20 backdrop-blur-sm"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-6 opacity-0 pointer-events-none"
     >
         <div
-            class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300"
+            id="summary-modal-card"
+            class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden"
         >
             <div class="p-8">
                 <div class="flex justify-between items-start mb-6">
@@ -93,7 +94,7 @@ import NewsCard from "../components/NewsCard.astro";
                     </div>
                     <button
                         id="close-modal"
-                        class="p-2 rounded-full hover:bg-black/5 transition-all"
+                        class="p-2 rounded-full hover:bg-black/5 transition-all text-black/60 hover:text-black"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -113,7 +114,7 @@ import NewsCard from "../components/NewsCard.astro";
                 </div>
                 <div
                     id="modal-content"
-                    class="text-lg leading-relaxed text-black/80 prose prose-slate"
+                    class="text-lg leading-relaxed text-black/80 prose prose-slate max-h-[50vh] overflow-y-auto pr-2"
                 >
                     <!-- Summary text -->
                 </div>
@@ -144,9 +145,38 @@ import NewsCard from "../components/NewsCard.astro";
         async function fetchNews() {
             if (!grid) return;
 
-            // Show loading state
-            grid.classList.remove("opacity-100");
-            grid.classList.add("opacity-40");
+            // Fade out grid before changing content
+            grid.classList.remove("opacity-100", "translate-y-0");
+            grid.classList.add("opacity-0", "translate-y-4");
+
+            // Wait for fade out transition (150ms) to show skeleton loaders
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            // Render premium pulsing skeleton cards
+            grid.innerHTML = Array(6)
+                .fill(`
+				<div class="bg-white rounded-2xl p-6 border border-black/5 flex flex-col h-full skeleton-card">
+					<div class="flex-1">
+						<div class="flex items-center gap-2 mb-3">
+							<div class="h-3 bg-black/10 rounded-full w-16"></div>
+							<div class="h-3 bg-black/5 rounded-full w-12"></div>
+						</div>
+						<div class="h-5 bg-black/10 rounded-lg w-5/6 mb-3"></div>
+						<div class="h-3 bg-black/5 rounded-lg w-full mb-2"></div>
+						<div class="h-3 bg-black/5 rounded-lg w-11/12 mb-2"></div>
+						<div class="h-3 bg-black/5 rounded-lg w-4/5 mb-4"></div>
+					</div>
+					<div class="flex items-center gap-3 mt-4 pt-4 border-t border-black/5">
+						<div class="h-9 bg-black/10 rounded-xl flex-1"></div>
+						<div class="h-9 bg-black/5 rounded-xl w-9"></div>
+					</div>
+				</div>
+			`)
+                .join("");
+
+            // Fade skeletons back in
+            grid.classList.remove("opacity-0", "translate-y-4");
+            grid.classList.add("opacity-100", "translate-y-0");
 
             try {
                 let url = `${API_BASE}/api/news?lang=${currentLang}&country=${currentCountry}`;
@@ -157,13 +187,24 @@ import NewsCard from "../components/NewsCard.astro";
                 const response = await fetch(url);
                 const data = await response.json();
 
+                // Fade out skeleton before showing real news
+                grid.classList.remove("opacity-100", "translate-y-0");
+                grid.classList.add("opacity-0", "translate-y-4");
+
+                // Wait for fade out transition (150ms)
+                await new Promise((resolve) => setTimeout(resolve, 150));
+
                 renderNews(data);
             } catch (err) {
                 console.error("Error fetching news:", err);
+                grid.classList.remove("opacity-100", "translate-y-0");
+                grid.classList.add("opacity-0", "translate-y-4");
+                
+                await new Promise((resolve) => setTimeout(resolve, 150));
                 grid.innerHTML =
                     '<p class="col-span-full text-center py-20 opacity-40">Error al cargar noticias. ¿Está encendido el servidor backend?</p>';
             } finally {
-                // Ensure grid is visible and remove the initial opacity-0 if present
+                // Ensure grid is visible with a smooth slide up
                 grid.classList.remove("opacity-0", "opacity-40");
                 grid.classList.add("opacity-100", "translate-y-0");
             }
@@ -179,8 +220,8 @@ import NewsCard from "../components/NewsCard.astro";
 
             grid.innerHTML = news
                 .map(
-                    (item) => `
-				<div class="bg-white rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-black/5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all duration-300 group flex flex-col h-full">
+                    (item, index) => `
+				<div class="news-card bg-white rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-black/5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all duration-300 group flex flex-col h-full opacity-0 translate-y-6 animate-fade-in-up" style="animation-delay: ${index * 50}ms;">
 					<div class="flex-1">
 						<div class="flex items-center gap-2 mb-3">
 							<span class="text-[10px] font-bold uppercase tracking-wider text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-full">${item.source || "Noticia"}</span>
@@ -241,6 +282,12 @@ import NewsCard from "../components/NewsCard.astro";
             isSummarizing = true;
             const originalText = btn.innerHTML;
 
+            // Highlight the specific news card with scanning styles
+            const card = btn.closest(".news-card");
+            if (card) {
+                card.classList.add("is-summarizing");
+            }
+
             // Disable all buttons and show specific state for the active one
             document.querySelectorAll(".summarize-btn").forEach((b) => {
                 const bEl = b as HTMLButtonElement;
@@ -275,8 +322,7 @@ import NewsCard from "../components/NewsCard.astro";
                         "<br>",
                     );
                 if (modal) {
-                    modal.classList.remove("hidden");
-                    modal.classList.add("flex");
+                    modal.classList.add("is-active");
                 }
             } catch (err) {
                 console.error("Error summarizing:", err);
@@ -285,6 +331,9 @@ import NewsCard from "../components/NewsCard.astro";
                 );
             } finally {
                 isSummarizing = false;
+                if (card) {
+                    card.classList.remove("is-summarizing");
+                }
                 document.querySelectorAll(".summarize-btn").forEach((b) => {
                     const bEl = b as HTMLButtonElement;
                     bEl.disabled = false;
@@ -330,6 +379,7 @@ import NewsCard from "../components/NewsCard.astro";
             }
 
             btnEl.addEventListener("click", () => {
+                if (currentCategory === label) return;
                 currentCategory = label;
                 fetchNews();
 
@@ -349,7 +399,9 @@ import NewsCard from "../components/NewsCard.astro";
         // Language filter listeners
         document.querySelectorAll(".lang-filter").forEach((btn) => {
             btn.addEventListener("click", () => {
-                currentLang = btn.getAttribute("data-lang") || "es";
+                const newLang = btn.getAttribute("data-lang") || "es";
+                if (currentLang === newLang) return;
+                currentLang = newLang;
                 currentCountry = btn.getAttribute("data-country") || "ES";
                 updateLangUI();
                 fetchNews();
@@ -364,11 +416,19 @@ import NewsCard from "../components/NewsCard.astro";
             if (!btn) return;
             btn.addEventListener("click", () => {
                 if (modal) {
-                    modal.classList.add("hidden");
-                    modal.classList.remove("flex");
+                    modal.classList.remove("is-active");
                 }
             });
         });
+
+        // Close modal when clicking outside the card
+        if (modal) {
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove("is-active");
+                }
+            });
+        }
     </script>
 
     <style>

@@ -5,6 +5,7 @@
 :root {
   --background: #ffffff;
   --foreground: #1d1d1f;
+  --apple-blue: #0071e3;
 }
 
 body {
@@ -20,3 +21,143 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Skeleton Pulse */
+@keyframes pulse-skeleton {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.skeleton-card {
+  animation: pulse-skeleton 1.5s infinite ease-in-out;
+}
+
+/* Button & Category interaction classes */
+.category-filter, .lang-filter, .summarize-btn, #close-modal-btn {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.category-filter:hover, .lang-filter:hover {
+  transform: translateY(-1.5px);
+}
+.category-filter:active, .lang-filter:active, .summarize-btn:active, #close-modal-btn:active {
+  transform: scale(0.96);
+}
+
+/* Summarizing active state on news card */
+.news-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.news-card.is-summarizing {
+  position: relative;
+  overflow: hidden;
+  transform: scale(1.025);
+  border-color: rgba(0, 113, 227, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 113, 227, 0.12);
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: rgba(0, 113, 227, 0.3);
+    box-shadow: 0 12px 40px rgba(0, 113, 227, 0.08);
+  }
+  50% {
+    border-color: rgba(0, 113, 227, 0.7);
+    box-shadow: 0 12px 40px rgba(0, 113, 227, 0.18);
+  }
+}
+
+/* Shimmer Scanning Line */
+.news-card.is-summarizing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--apple-blue), transparent);
+  animation: scan-line 2s infinite ease-in-out;
+  z-index: 10;
+  box-shadow: 0 0 12px var(--apple-blue);
+}
+
+@keyframes scan-line {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+    opacity: 0.8;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+/* Summarize Button active gradient shimmer */
+.news-card.is-summarizing .summarize-btn {
+  background: linear-gradient(90deg, #000000, #1d1d1f, var(--apple-blue), #000000);
+  background-size: 300% 100%;
+  animation: gradient-shimmer 2s infinite linear;
+}
+
+@keyframes gradient-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Premium Transitions for the Summary Modal */
+#summary-modal {
+  transition: background-color 0.4s ease-out, backdrop-filter 0.4s ease-out, opacity 0.4s ease-out;
+}
+
+#summary-modal.is-active {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: auto;
+  opacity: 1;
+}
+
+#summary-modal-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out;
+}
+
+#summary-modal.is-active #summary-modal-card {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+#summary-modal:not(.is-active) #summary-modal-card {
+  transform: scale(0.95) translateY(20px);
+  opacity: 0;
+}
+

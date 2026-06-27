@@ -3,7 +3,7 @@ export { renderers } from '../../renderers.mjs';
 
 const POST = async ({ request }) => {
   try {
-    const apiKey = "your_gemini_api_key_here";
+    const apiKey = undefined                               || process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey === "your_gemini_api_key_here") {
       return new Response(
         JSON.stringify({
